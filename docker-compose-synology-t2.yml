@@ -301,40 +301,6 @@ services:
       - "traefik.http.routers.autoindex-rtr.service=autoindex-svc"
       - "traefik.http.services.autoindex-svc.loadbalancer.server.port=80"
 
-  # UniFi Controller - Managing UniFi Network
-  unifi:
-    container_name: unifi
-    image: jacobalberty/unifi:stable
-    restart: unless-stopped
-    networks:
-      - t2_proxy
-    security_opt:
-      - no-new-privileges:true
-    ports:
-      - "8080:8080"
-      - "8443:8443"
-      - "3478:3478/udp"
-      - "10001:10001/udp"
-      - "6789:6789"
-    volumes:
-      - ${DOCKERDIR}/unifi:/unifi
-    environment:
-      UNIFI_UID: $PUID
-      UNIFI_GID: $PGID
-      TZ: America/New_York
-      RUNAS_UID0: "false"
-      BIND_PRIV: "false"
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.unifi-rtr.entrypoints=https"
-      - "traefik.http.routers.unifi-rtr.rule=HostHeader(`ufi.$DOMAINNAME`)"
-      ## Middlewares
-      - "traefik.http.routers.unifi-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.unifi-rtr.service=unifi-svc"
-      - "traefik.http.services.unifi-svc.loadbalancer.server.port=8443"
-
   # Radarr - Movie management
   # Set url_base in radarr settings if using PathPrefix
   radarr:
@@ -376,41 +342,41 @@ services:
       - "traefik.http.routers.radarr-rtr-bypass.service=radarr-svc"
       - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
       
-  # Plex - Media Server
-  plexms:
-    image: plexinc/pms-docker:public
-    container_name: plexms
-    restart: unless-stopped
-    # network_mode: "host"
-    # privileged: true
-    networks:
-      - t2_proxy
-    devices:
-      - /dev/dri:/dev/dri # for hardware transcoding
-    security_opt:
-      - no-new-privileges:true
-    ports:
-      - "$PLEX_PORT:32400/tcp"
-      - "3005:3005/tcp"
-      - "8324:8324/tcp"
-      - "32469:32469/tcp"
-      # - "1900:1900/udp" # DLNA port. port already in use error.
-      - "32410:32410/udp"
-      - "32412:32412/udp"
-      - "32413:32413/udp"
-      - "32414:32414/udp"
-      # - "$PLEX_WEB_TOOLS_PORT:33400" # if using plex web tools.
-    volumes:
-      - $DOCKERDIR/plexms:/config
-      - $MEDIADIR:/media
-      - /dev/shm:/transcode
-    environment:
-      TZ: $TZ
-      HOSTNAME: "synPlex"
-      PLEX_CLAIM: $PLEX_CLAIM
-      PLEX_UID: $PUID
-      PLEX_GID: $PGID
-      ADVERTISE_IP: http://$SERVER_IP:32400/
+  # # Plex - Media Server
+  # plexms:
+  #   image: plexinc/pms-docker:public
+  #   container_name: plexms
+  #   restart: unless-stopped
+  #   # network_mode: "host"
+  #   # privileged: true
+  #   networks:
+  #     - t2_proxy
+  #   devices:
+  #     - /dev/dri:/dev/dri # for hardware transcoding
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   ports:
+  #     - "$PLEX_PORT:32400/tcp"
+  #     - "3005:3005/tcp"
+  #     - "8324:8324/tcp"
+  #     - "32469:32469/tcp"
+  #     # - "1900:1900/udp" # DLNA port. port already in use error.
+  #     - "32410:32410/udp"
+  #     - "32412:32412/udp"
+  #     - "32413:32413/udp"
+  #     - "32414:32414/udp"
+  #     # - "$PLEX_WEB_TOOLS_PORT:33400" # if using plex web tools.
+  #   volumes:
+  #     - $DOCKERDIR/plexms:/config
+  #     - $MEDIADIR:/media
+  #     - /dev/shm:/transcode
+  #   environment:
+  #     TZ: $TZ
+  #     HOSTNAME: "synPlex"
+  #     PLEX_CLAIM: $PLEX_CLAIM
+  #     PLEX_UID: $PUID
+  #     PLEX_GID: $PGID
+  #     ADVERTISE_IP: http://$SERVER_IP:32400/
 
   ############################# MAINTENANCE
 

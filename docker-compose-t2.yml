@@ -47,8 +47,6 @@ secrets:
     file: $SECRETSDIR/transmission_rpc_username
   transmission_rpc_password:
     file: $SECRETSDIR/transmission_rpc_password
-  plex_claim:
-    file: $SECRETSDIR/plex_claim
   handbrake_vnc_password:
     file: $SECRETSDIR/handbrake_vnc_password
   mkvtoolnix_vnc_password:
@@ -57,8 +55,6 @@ secrets:
     file: $SECRETSDIR/makemkv_vnc_password
   filebot_vnc_password:
     file: $SECRETSDIR/filebot_vnc_password
-  firefox_vnc_password:
-    file: $SECRETSDIR/firefox_vnc_password
   qdirstat_vnc_password:
     file: $SECRETSDIR/qdirstat_vnc_password
   guac_mysql_user:
@@ -554,21 +550,6 @@ services:
       - "traefik.http.routers.phpmyadmin-rtr.service=phpmyadmin-svc"
       - "traefik.http.services.phpmyadmin-svc.loadbalancer.server.port=80"
 
-  # InfluxDB - Database for sensor data
-  # Create influxdb.conf
-  influxdb:
-    image: influxdb
-    container_name: influxdb
-    restart: always
-    security_opt:
-      - no-new-privileges:true
-    ports:
-      - "$INFLUXDB_PORT:8086"
-    volumes:
-      # - $DOCKERDIR/influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
-      - $DOCKERDIR/influxdb/db:/var/lib/influxdb
-  #    command: -config /etc/influxdb/influxdb.conf
-
   # Postgres - Database
   postgres:
     image: postgres
@@ -624,32 +605,6 @@ services:
       - "traefik.http.routers.rediscommander-rtr.service=rediscommander-svc"
       - "traefik.http.services.rediscommander-svc.loadbalancer.server.port=8081"
 
-  # Grafana - Graphical data visualization for InfluxDB data
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    restart: unless-stopped
-    networks:
-      - t2_proxy
-    security_opt:
-      - no-new-privileges:true
-    # ports:
-    #   - "$GRAFANA_PORT:3000"
-    user: "0"
-    volumes:
-      - $DOCKERDIR/grafana:/var/lib/grafana
-    environment:
-      GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-simple-json-datasource,grafana-worldmap-panel,grafana-piechart-panel"
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.grafana-rtr.entrypoints=https"
-      - "traefik.http.routers.grafana-rtr.rule=HostHeader(`grafana.$DOMAINNAME`)"
-      ## Middlewares
-      - "traefik.http.routers.grafana-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.grafana-rtr.service=grafana-svc"
-      - "traefik.http.services.grafana-svc.loadbalancer.server.port=3000"
 
   ############################# DOWNLOADERS
 
@@ -1125,90 +1080,6 @@ services:
       - "traefik.http.routers.airsonic-rtr.service=airsonic-svc"
       - "traefik.http.services.airsonic-svc.loadbalancer.server.port=4040"
 
-  # Plex - Media Server
-  plexms:
-    image: plexinc/pms-docker:public
-    container_name: plexms
-    restart: unless-stopped
-    networks:
-      - t2_proxy
-    devices:
-      - /dev/dri:/dev/dri # for harware transcoding
-    security_opt:
-      - no-new-privileges:true
-    ports:
-      - "$PLEX_PORT:32400/tcp"
-      - "3005:3005/tcp"
-      - "8324:8324/tcp"
-      - "32469:32469/tcp"
-      - "1900:1900/udp" # conflicts with xTeVe
-      - "32410:32410/udp"
-      - "32412:32412/udp"
-      - "32413:32413/udp"
-      - "32414:32414/udp"
-      - "$PLEX_WEB_TOOLS_PORT:33400"
-    volumes:
-      - $DOCKERDIR/plexms:/config
-      - $USERDIR/Downloads:/Downloads
-      - /media:/nas
-      - /dev/shm:/transcode # Offload transcoding to RAM if you have enough RAM
-    #   - $USERDIR/Downloads/plex_tmp:/transcode
-    environment:
-      TZ: $TZ
-      HOSTNAME: "nucPlex"
-      PLEX_CLAIM_FILE: /run/secrets/plex_claim
-      PLEX_UID: $PUID
-      PLEX_GID: $PGID
-      ADVERTISE_IP: http://$SERVER_IP:$PLEX_PORT/
-    secrets:
-      - plex_claim
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.plexms-rtr.entrypoints=https"
-      - "traefik.http.routers.plexms-rtr.rule=HostHeader(`nucplex.$DOMAINNAME`)"
-      ## Middlewares
-      - "traefik.http.routers.plexms-rtr.middlewares=chain-no-auth@file"
-      ## HTTP Services
-      - "traefik.http.routers.plexms-rtr.service=plexms-svc"
-      - "traefik.http.services.plexms-svc.loadbalancer.server.port=32400"
-
-  # Emby - Media Server
-  embyms:
-    image: emby/embyserver:latest
-    container_name: embyms
-    restart: unless-stopped
-    networks:
-      - t2_proxy
-    devices:
-      - /dev/dri:/dev/dri # for harware transcoding
-    security_opt:
-      - no-new-privileges:true
-    ports:
-      - "$EMBY_PORT:8096/tcp"
-      - "8920:8920/tcp"
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - $DOCKERDIR/embyms:/config
-      - /dev/shm:/transcode
-      - /media:/nas
-      - $USERDIR/Downloads:/downloads
-    environment:
-      TZ: $TZ
-      HOSTNAME: "nucEmby"
-      UID: $PUID
-      GID: $PGID
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.embyms-rtr.entrypoints=https"
-      - "traefik.http.routers.embyms-rtr.rule=HostHeader(`nucemby.$DOMAINNAME`)"
-      ## Middlewares
-      - "traefik.http.routers.embyms-rtr.middlewares=chain-no-auth@file"
-      ## HTTP Services
-      - "traefik.http.routers.embyms-rtr.service=embyms-svc"
-      - "traefik.http.services.embyms-svc.loadbalancer.server.port=8096"
-
   # Jellyfin - Media Server
   jellyfin:
     image: jellyfin/jellyfin:latest
@@ -1273,49 +1144,7 @@ services:
       - "traefik.http.routers.ombi-rtr.service=ombi-svc"
       - "traefik.http.services.ombi-svc.loadbalancer.server.port=3579"
 
-  # Tautulli - Previously PlexPy. Plex statistics and monitoring
-  # Set HTTP Root in Tautulli settings if using PathPrefix
-  tautulli:
-    image: linuxserver/tautulli:latest
-    container_name: tautulli
-    restart: unless-stopped
-    networks:
-      - t2_proxy
-    security_opt:
-      - no-new-privileges:true
-    # ports:
-    #  - "$TAUTULLI_PORT:8181"
-    volumes:
-      - $DOCKERDIR/tautulli/config:/config
-      - $DOCKERDIR/tautulli/logs:/logs:ro
-    environment:
-      PUID: $PUID
-      PGID: $PGID
-      TZ: $TZ
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.tautulli-rtr.entrypoints=https"
-      - "traefik.http.routers.tautulli-rtr.rule=HostHeader(`tautulli.$DOMAINNAME`)"
-      ## Middlewares
-      - "traefik.http.routers.tautulli-rtr.middlewares=chain-authelia@file"
-      ## HTTP Services
-      - "traefik.http.routers.tautulli-rtr.service=tautulli-svc"
-      - "traefik.http.services.tautulli-svc.loadbalancer.server.port=8181"
-
-  # Plex-Sync - For Syncing watched status between plex servers
-  plex-sync:
-    image: patsissons/plex-sync:develop
-    container_name: plex-sync
-    security_opt:
-      - no-new-privileges:true
-    environment:
-      INITIAL_RUN: "true"
-      # DRY_RUN: 0
-      CRON_SCHEDULE: "*/5 * * * *"
-      SECTION_MAPS: $SYN_PLEX/$SYN_PLEX_HOLLYWOOD $NUC_PLEX/$NUC_PLEX_HOLLYWOOD | $SYN_PLEX/$SYN_PLEX_TVSHOWS $NUC_PLEX/$NUC_PLEX_TVSHOWS | $SYN_PLEX/$SYN_PLEX_INDIAN $NUC_PLEX/$NUC_PLEX_INDIAN | $SYN_PLEX/$SYN_PLEX_KOLLYWOOD $NUC_PLEX/$NUC_PLEX_KOLLYWOOD | $SYN_PLEX/$SYN_PLEX_DOCMOVIES $NUC_PLEX/$NUC_PLEX_DOCMOVIES | $SYN_PLEX/$SYN_PLEX_DOCSHOWS $NUC_PLEX/$NUC_PLEX_DOCSHOWS | $SYN_PLEX/$SYN_PLEX_KIDSMOVIES $NUC_PLEX/$NUC_PLEX_KIDSMOVIES | $SYN_PLEX/$SYN_PLEX_INTERNATIONAL $NUC_PLEX/$NUC_PLEX_INTERNATIONAL
-    restart: unless-stopped
-
+  
   # PhotoShow - Image Gallery
   photoshow:
     image: linuxserver/photoshow:latest
@@ -1880,30 +1709,30 @@ services:
 
   ############################# MAINTENANCE
 
-  # Ouroboros - Automatic Docker Container Updates
-  ouroboros:
-    image: pyouroboros/ouroboros:latest
-    container_name: ouroboros
-    restart: unless-stopped
-    networks:
-      - default
-      - socket_proxy
-    # depends_on:
-    #  - socket-proxy
-    volumes:
-      # - /var/run/docker.sock:/var/run/docker.sock # Use Docker Socket Proxy instead for improved security
-      - $DOCKERDIR/watchtower/config.json:/root/.docker/config.json:ro
-    environment:
-      TZ: $TZ
-      INTERVAL: 86400
-      LOG_LEVEL: info
-      SELF_UPDATE: "true"
-      CLEANUP: "true"
-      IGNORE: traefik influxdb hassio_dns homeassistant hassio_supervisor addon_core_check_config addon_62c7908d_autobackup plexms
-      NOTIFIERS: "tgram://$TGRAM_BOT_TOKEN/$TGRAM_CHAT_ID/"
-      DOCKER_SOCKETS: tcp://socket-proxy:2375 # POST to be enabled on Socket Proxy
+  # # Ouroboros - Automatic Docker Container Updates
+  # ouroboros:
+  #   image: pyouroboros/ouroboros:latest
+  #   container_name: ouroboros
+  #   restart: unless-stopped
+  #   networks:
+  #     - default
+  #     - socket_proxy
+  #   # depends_on:
+  #   #  - socket-proxy
+  #   volumes:
+  #     # - /var/run/docker.sock:/var/run/docker.sock # Use Docker Socket Proxy instead for improved security
+  #     - $DOCKERDIR/watchtower/config.json:/root/.docker/config.json:ro
+  #   environment:
+  #     TZ: $TZ
+  #     INTERVAL: 86400
+  #     LOG_LEVEL: info
+  #     SELF_UPDATE: "true"
+  #     CLEANUP: "true"
+  #     IGNORE: traefik influxdb hassio_dns homeassistant hassio_supervisor addon_core_check_config addon_62c7908d_autobackup plexms
+  #     NOTIFIERS: "tgram://$TGRAM_BOT_TOKEN/$TGRAM_CHAT_ID/"
+  #     DOCKER_SOCKETS: tcp://socket-proxy:2375 # POST to be enabled on Socket Proxy
 
-  # Docker-GC - Automatic Docker Garbage Collection
+  # # Docker-GC - Automatic Docker Garbage Collection
   # Create docker-gc-exclude file
   dockergc:
     image: clockworksoul/docker-gc-cron:latest
