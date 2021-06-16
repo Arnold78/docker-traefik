@@ -97,14 +97,9 @@ We will try to keep this repo up-to-date. For now, here are the apps currently i
 - AirSonic - Music Server
 - Calibre - Ebook/Audiobook Server
 - Calibre-Web - Ebook/Audiobook Reader
-- Plex - Media Server
 - Emby - Media Server
 - Jellyfin - Media Server
-- Ombi - Media Requests
-- Tautulli - Previously PlexPy. Plex statistics and monitoring
-- Plex-Sync - For Syncing watched status between plex servers
 - PhotoShow - Personal Photo Gallery and viewer
-- TellyTv- IPTV proxy for Plex (OBSOLETE)
 - xTeve- IPTV proxy for Plex (OBSOLETE)
 
 ### MEDIA FILE MANAGEMENT
@@ -118,9 +113,7 @@ We will try to keep this repo up-to-date. For now, here are the apps currently i
 
 ### SYSTEM
 
-- Firefox - Web Broswer
 - Glances - System Information
-- APCUPSD - APC UPS Management
 - Guacamole - Remote desktop, SSH, on Telnet on any HTML5 Browser
 - Guacamole Daemon - Needed for Guacamole
 - Dozzle - Docker logs viewer
@@ -128,10 +121,6 @@ We will try to keep this repo up-to-date. For now, here are the apps currently i
 - StatPing - Status Page & Monitoring Server
 - SmokePing - Network Latency Monitoring
 - VS Code Server - Code Editor
-- Logarr - Log Management (OBSOLETE)
-- Monitorr - Webfront to display the status of any webapp or service (OBSOLETE)
-- Cloud Commander - Web File Manager (OBSOLETE)
-- Cloud9 - Cloud IDE (OBSOLETE)
 
 ### MAINTENANCE
 
